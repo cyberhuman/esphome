@@ -65,6 +65,8 @@ async def to_code(config):
     await cg.register_component(var, config)
 
     cg.add_define("USE_ESP_ADF")
+    #cg.add_define("CONFIG_FREERTOS_ENABLE_BACKWARD_COMPATIBILITY", 1)
+    esp32.add_idf_sdkconfig_option("CONFIG_FREERTOS_ENABLE_BACKWARD_COMPATIBILITY", True)
 
     cg.add_platformio_option("build_unflags", "-Wl,--end-group")
 

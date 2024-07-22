@@ -272,6 +272,7 @@ size_t ESPADFSpeaker::play(const uint8_t *data, size_t length) {
   if (this->state_ != speaker::STATE_RUNNING && this->state_ != speaker::STATE_STARTING) {
     this->start();
   }
+  ESP_LOGI(TAG, "Will be sending %zd bytes", length);
   now_playing_data = data;
   now_playing_length = length;
   return this->keep_playing_();
@@ -289,12 +290,14 @@ size_t ESPADFSpeaker::keep_playing_() {
     event.len = to_send_length;
     memcpy(event.data, now_playing_data, to_send_length);
     if (xQueueSend(this->buffer_queue_.handle, &event, 0) != pdTRUE) {
+      ESP_LOGI(TAG, "Buffer is full, %zd bytes sent, %zd bytes remaining", sent_length, now_playing_length);
       return sent_length;  // Queue full
     }
     now_playing_data += to_send_length;
     now_playing_length -= to_send_length;
     sent_length += to_send_length;
   }
+  ESP_LOGI(TAG, "Finished sending %zd bytes", sent_length);
   return sent_length;
 }
 

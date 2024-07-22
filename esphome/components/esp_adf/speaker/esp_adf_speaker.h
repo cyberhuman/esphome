@@ -43,6 +43,10 @@ class ESPADFSpeaker : public ESPADFPipeline, public speaker::Speaker, public Com
     uint8_t *storage;
   } buffer_queue_;
   QueueHandle_t event_queue_;
+
+  size_t keep_playing_();
+  const uint8_t *now_playing_data;
+  size_t now_playing_length{0};
 };
 
 }  // namespace esp_adf

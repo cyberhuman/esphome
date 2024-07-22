@@ -256,6 +256,8 @@ void ESPADFSpeaker::loop() {
       this->start_();
       break;
     case speaker::STATE_RUNNING:
+      this->keep_playing_();
+      break;
     case speaker::STATE_STOPPING:
     case speaker::STATE_STOPPED:
       break;
@@ -270,21 +272,30 @@ size_t ESPADFSpeaker::play(const uint8_t *data, size_t length) {
   if (this->state_ != speaker::STATE_RUNNING && this->state_ != speaker::STATE_STARTING) {
     this->start();
   }
-  size_t remaining = length;
-  size_t index = 0;
-  while (remaining > 0) {
+  now_playing_data = data;
+  now_playing_length = length;
+  return this->keep_playing_();
+}
+
+size_t ESPADFSpeaker::keep_playing_() {
+  if (!this->now_playing_length) {
+    return 0;
+  }
+  size_t sent_length = 0;
+  while (now_playing_length > 0) {
     DataEvent event;
     event.stop = false;
-    size_t to_send_length = std::min(remaining, BUFFER_SIZE);
+    size_t to_send_length = std::min(now_playing_length, BUFFER_SIZE);
     event.len = to_send_length;
-    memcpy(event.data, data + index, to_send_length);
+    memcpy(event.data, now_playing_data, to_send_length);
     if (xQueueSend(this->buffer_queue_.handle, &event, 0) != pdTRUE) {
-      return index;  // Queue full
+      return sent_length;  // Queue full
     }
-    remaining -= to_send_length;
-    index += to_send_length;
+    now_playing_data += to_send_length;
+    now_playing_length -= to_send_length;
+    sent_length += to_send_length;
   }
-  return index;
+  return sent_length;
 }
 
 bool ESPADFSpeaker::has_buffered_data() const { return uxQueueMessagesWaiting(this->buffer_queue_.handle) > 0; }

@@ -145,16 +145,10 @@ void ESPADFSpeaker::player_task(void *params) {
   event.type = TaskEventType::STARTED;
   xQueueSend(this_speaker->event_queue_, &event, 0);
 
-  uint32_t last_received = millis();
-
   while (true) {
-    if (xQueueReceive(this_speaker->buffer_queue_.handle, &data_event, 0) != pdTRUE) {
-      if (millis() - last_received > 500) {
-        // No audio for 500ms, stop
-        break;
-      } else {
-        continue;
-      }
+    if (xQueueReceive(this_speaker->buffer_queue_.handle, &data_event, 500 / portTICK_PERIOD_MS) != pdTRUE) {
+      // No audio for 500ms, stop
+      break;
     }
     if (data_event.stop) {
       // Stop signal from main thread
@@ -166,8 +160,6 @@ void ESPADFSpeaker::player_task(void *params) {
 
     size_t remaining = data_event.len;
     size_t current = 0;
-    if (remaining > 0)
-      last_received = millis();
 
     while (remaining > 0) {
       int bytes_written = raw_stream_write(raw_write, (char *) data_event.data + current, remaining);

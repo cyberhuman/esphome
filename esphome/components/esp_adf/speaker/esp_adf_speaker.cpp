@@ -261,12 +261,12 @@ size_t ESPADFSpeaker::play(const uint8_t *data, size_t length) {
     ESP_LOGE(TAG, "Failed to play audio, speaker is in failed state.");
     return 0;
   }
-  if (this->state_ != speaker::STATE_RUNNING && this->state_ != speaker::STATE_STARTING) {
-    this->start();
-  }
   ESP_LOGI(TAG, "Will be sending %zd bytes", length);
   now_playing_data = data;
   now_playing_length = length;
+  if (this->state_ != speaker::STATE_RUNNING && this->state_ != speaker::STATE_STARTING) {
+    this->start();
+  }
   return this->keep_playing_();
 }
 

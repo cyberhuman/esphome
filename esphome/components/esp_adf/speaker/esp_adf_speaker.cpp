@@ -50,6 +50,7 @@ void ESPADFSpeaker::start_() {
     return;  // Waiting for another i2s component to return lock
   }
 
+  ESP_LOGI(TAG, "ESPADFSpeaker::start_ %p now_playing_data %p length %zd", this, this->now_playing_data, this->now_playing_length);
   xTaskCreate(ESPADFSpeaker::player_task, "speaker_task", 8192, (void *) this, 0, &this->player_task_handle_);
 }
 
@@ -219,9 +220,13 @@ void ESPADFSpeaker::watch_() {
   if (xQueueReceive(this->event_queue_, &event, 0) == pdTRUE) {
     switch (event.type) {
       case TaskEventType::STARTING:
+        ESP_LOGI(TAG, "ESPADFSpeaker::watch_ %p starting | now_playing_data %p length %zd", this, this->now_playing_data, this->now_playing_length);
+        break;
       case TaskEventType::STOPPING:
+        ESP_LOGI(TAG, "ESPADFSpeaker::watch_ %p stopping | now_playing_data %p length %zd", this, this->now_playing_data, this->now_playing_length);
         break;
       case TaskEventType::STARTED:
+        ESP_LOGI(TAG, "ESPADFSpeaker::watch_ %p started | now_playing_data %p length %zd", this, this->now_playing_data, this->now_playing_length);
         this->state_ = speaker::STATE_RUNNING;
         break;
       case TaskEventType::RUNNING:
@@ -232,6 +237,7 @@ void ESPADFSpeaker::watch_() {
         this->state_ = speaker::STATE_STOPPED;
         vTaskDelete(this->player_task_handle_);
         this->player_task_handle_ = nullptr;
+        ESP_LOGI(TAG, "ESPADFSpeaker::watch_ %p stopped | now_playing_data %p length %zd", this, this->now_playing_data, this->now_playing_length);
         break;
       case TaskEventType::WARNING:
         ESP_LOGW(TAG, "Error writing to pipeline: %s", esp_err_to_name(event.err));
@@ -261,7 +267,7 @@ size_t ESPADFSpeaker::play(const uint8_t *data, size_t length) {
     ESP_LOGE(TAG, "Failed to play audio, speaker is in failed state.");
     return 0;
   }
-  ESP_LOGI(TAG, "Will be sending %zd bytes", length);
+  ESP_LOGI(TAG, "Will be sending data %p bytes %zd", data, length);
   now_playing_data = data;
   now_playing_length = length;
   if (this->state_ != speaker::STATE_RUNNING && this->state_ != speaker::STATE_STARTING) {
@@ -282,14 +288,14 @@ size_t ESPADFSpeaker::keep_playing_() {
     event.len = to_send_length;
     memcpy(event.data, now_playing_data, to_send_length);
     if (xQueueSend(this->buffer_queue_.handle, &event, 0) != pdTRUE) {
-      ESP_LOGI(TAG, "Buffer is full, %zd bytes sent, %zd bytes remaining", sent_length, now_playing_length);
+      ESP_LOGI(TAG, "Buffer is full, sent bytes %zd, data %p remaining bytes %zd", sent_length, now_playing_data, now_playing_length);
       return sent_length;  // Queue full
     }
     now_playing_data += to_send_length;
     now_playing_length -= to_send_length;
     sent_length += to_send_length;
   }
-  ESP_LOGI(TAG, "Finished sending %zd bytes", sent_length);
+  ESP_LOGI(TAG, "Finished sending bytes %zd data %p", sent_length, now_playing_data);
   return sent_length;
 }
 

@@ -178,25 +178,31 @@ void ESPADFSpeaker::player_task(void *params) {
     xQueueSend(this_speaker->event_queue_, &event, 0);
   }
 
+  ESP_LOGI(TAG, "ESPADFSpeaker::player_task %p stopping 1 | now_playing_data %p length %zd", this_speaker, this_speaker->now_playing_data, this_speaker->now_playing_length);
   audio_pipeline_stop(pipeline);
   audio_pipeline_wait_for_stop(pipeline);
   audio_pipeline_terminate(pipeline);
 
+  ESP_LOGI(TAG, "ESPADFSpeaker::player_task %p stopping 2 | now_playing_data %p length %zd", this_speaker, this_speaker->now_playing_data, this_speaker->now_playing_length);
   event.type = TaskEventType::STOPPING;
   xQueueSend(this_speaker->event_queue_, &event, portMAX_DELAY);
 
+  ESP_LOGI(TAG, "ESPADFSpeaker::player_task %p stopping 3 | now_playing_data %p length %zd", this_speaker, this_speaker->now_playing_data, this_speaker->now_playing_length);
   audio_pipeline_unregister(pipeline, i2s_stream_writer);
   audio_pipeline_unregister(pipeline, filter);
   audio_pipeline_unregister(pipeline, raw_write);
 
+  ESP_LOGI(TAG, "ESPADFSpeaker::player_task %p stopping 4 | now_playing_data %p length %zd", this_speaker, this_speaker->now_playing_data, this_speaker->now_playing_length);
   audio_pipeline_deinit(pipeline);
   audio_element_deinit(i2s_stream_writer);
   audio_element_deinit(filter);
   audio_element_deinit(raw_write);
 
+  ESP_LOGI(TAG, "ESPADFSpeaker::player_task %p stopping 5 | now_playing_data %p length %zd", this_speaker, this_speaker->now_playing_data, this_speaker->now_playing_length);
   event.type = TaskEventType::STOPPED;
   xQueueSend(this_speaker->event_queue_, &event, portMAX_DELAY);
 
+  //ESP_LOGI(TAG, "ESPADFSpeaker::player_task %p stopping 6 | now_playing_data %p length %zd", this_speaker, this_speaker->now_playing_data, this_speaker->now_playing_length);
   while (true) {
     delay(10);
   }

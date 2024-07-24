@@ -2,6 +2,8 @@
 
 #ifdef USE_ESP_IDF
 
+#include <inttypes.h>
+
 #include <driver/i2s.h>
 
 #include "esphome/core/application.h"
@@ -146,7 +148,12 @@ void ESPADFSpeaker::player_task(void *params) {
   event.type = TaskEventType::STARTED;
   xQueueSend(this_speaker->event_queue_, &event, 0);
 
+  uint32_t last_received = millis();
+
   while (true) {
+    uint32_t now = millis();
+    ESP_LOGI(TAG, "ESPADFSpeaker::player_task %p now %" PRIu32 " last_received %" PRIu32 " | now_playing_data %p length %zd",
+      this_speaker, now, last_received, this_speaker->now_playing_data, this_speaker->now_playing_length);
     if (xQueueReceive(this_speaker->buffer_queue_.handle, &data_event, 500 / portTICK_PERIOD_MS) != pdTRUE) {
       // No audio for 500ms, stop
       break;
@@ -162,6 +169,8 @@ void ESPADFSpeaker::player_task(void *params) {
     size_t remaining = data_event.len;
     size_t current = 0;
 
+    if (remaining > 0)
+      last_received = now;
     while (remaining > 0) {
       int bytes_written = raw_stream_write(raw_write, (char *) data_event.data + current, remaining);
       if (bytes_written == ESP_FAIL) {

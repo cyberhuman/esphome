@@ -51,7 +51,7 @@ void ESPADFSpeaker::start_() {
   }
 
   ESP_LOGI(TAG, "ESPADFSpeaker::start_ %p now_playing_data %p length %zd", this, this->now_playing_data, this->now_playing_length);
-  xTaskCreate(ESPADFSpeaker::player_task, "speaker_task", 8192, (void *) this, 0, &this->player_task_handle_);
+  xTaskCreate(ESPADFSpeaker::player_task, "speaker_task", 8192, (void *) this, 2, &this->player_task_handle_);
 }
 
 void ESPADFSpeaker::player_task(void *params) {
@@ -204,7 +204,7 @@ void ESPADFSpeaker::player_task(void *params) {
 
   //ESP_LOGI(TAG, "ESPADFSpeaker::player_task %p stopping 6 | now_playing_data %p length %zd", this_speaker, this_speaker->now_playing_data, this_speaker->now_playing_length);
   while (true) {
-    delay(10);
+    vTaskDelay(portMAX_DELAY);
   }
 }
 

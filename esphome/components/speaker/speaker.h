@@ -20,7 +20,7 @@ class Speaker {
 
   virtual bool has_buffered_data() const = 0;
 
-  bool is_running() const { return this->state_ == STATE_RUNNING; }
+  virtual bool is_running() const { return this->state_ == STATE_RUNNING; }
 
  protected:
   State state_{STATE_STOPPED};

@@ -31,6 +31,8 @@ class ESPADFSpeaker : public ESPADFPipeline, public speaker::Speaker, public Com
 
   bool has_buffered_data() const override;
 
+  bool is_running() const override;
+
  protected:
   void start_();
   void watch_();

@@ -332,6 +332,8 @@ size_t ESPADFSpeaker::keep_playing_() {
 
 bool ESPADFSpeaker::has_buffered_data() const { return uxQueueMessagesWaiting(this->buffer_queue_.handle) > 0; }
 
+bool ESPADFSpeaker::is_running() const { return now_playing_length > 0 || speaker::Speaker::is_running(); }
+
 }  // namespace esp_adf
 }  // namespace esphome
 

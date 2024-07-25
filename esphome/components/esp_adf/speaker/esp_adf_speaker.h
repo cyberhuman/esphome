@@ -38,6 +38,7 @@ class ESPADFSpeaker : public ESPADFPipeline, public speaker::Speaker, public Com
   static void player_task(void *params);
 
   TaskHandle_t player_task_handle_{nullptr};
+  volatile bool is_player_task_active{false};
   struct {
     QueueHandle_t handle;
     uint8_t *storage;

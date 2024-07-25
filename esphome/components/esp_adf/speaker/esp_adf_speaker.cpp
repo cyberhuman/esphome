@@ -145,16 +145,24 @@ void ESPADFSpeaker::player_task(void *params) {
 
   DataEvent data_event;
 
+  this_speaker->is_player_task_active = true;
+
   event.type = TaskEventType::STARTED;
   xQueueSend(this_speaker->event_queue_, &event, 0);
 
-  uint32_t last_received = millis();
+  TickType_t last_received = xTaskGetTickCount();
+  //uint32_t last_received = millis();
 
   while (true) {
-    uint32_t now = millis();
-    ESP_LOGI(TAG, "ESPADFSpeaker::player_task %p now %" PRIu32 " last_received %" PRIu32 " | now_playing_data %p length %zd",
-      this_speaker, now, last_received, this_speaker->now_playing_data, this_speaker->now_playing_length);
-    if (xQueueReceive(this_speaker->buffer_queue_.handle, &data_event, 500 / portTICK_PERIOD_MS) != pdTRUE) {
+    TickType_t now = xTaskGetTickCount();
+    int32_t wait_timeout = 500l / portTICK_PERIOD_MS - (now - last_received);
+    if (wait_timeout < 0) {
+      wait_timeout = 0;
+    }
+    //uint32_t now = millis();
+    //ESP_LOGI(TAG, "ESPADFSpeaker::player_task %p now %" PRIu32 " last_received %" PRIu32 " | now_playing_data %p length %zd",
+    //  this_speaker, now, last_received, this_speaker->now_playing_data, this_speaker->now_playing_length);
+    if (xQueueReceive(this_speaker->buffer_queue_.handle, &data_event, wait_timeout) != pdTRUE) {
       // No audio for 500ms, stop
       break;
     }
@@ -186,6 +194,8 @@ void ESPADFSpeaker::player_task(void *params) {
     event.type = TaskEventType::RUNNING;
     xQueueSend(this_speaker->event_queue_, &event, 0);
   }
+
+  this_speaker->is_player_task_active = false;
 
   ESP_LOGI(TAG, "ESPADFSpeaker::player_task %p stopping 1 | now_playing_data %p length %zd", this_speaker, this_speaker->now_playing_data, this_speaker->now_playing_length);
   audio_pipeline_stop(pipeline);
@@ -253,6 +263,7 @@ void ESPADFSpeaker::watch_() {
         vTaskDelete(this->player_task_handle_);
         this->player_task_handle_ = nullptr;
         ESP_LOGI(TAG, "ESPADFSpeaker::watch_ %p stopped | now_playing_data %p length %zd", this, this->now_playing_data, this->now_playing_length);
+        this->keep_playing_();
         break;
       case TaskEventType::WARNING:
         ESP_LOGW(TAG, "Error writing to pipeline: %s", esp_err_to_name(event.err));
@@ -282,17 +293,22 @@ size_t ESPADFSpeaker::play(const uint8_t *data, size_t length) {
     ESP_LOGE(TAG, "Failed to play audio, speaker is in failed state.");
     return 0;
   }
-  ESP_LOGI(TAG, "Will be sending data %p bytes %zd", data, length);
+  ESP_LOGI(TAG,
+    "Will be sending data %p bytes %zd | prev now_playing_data %p length %zd buffered chunks %d",
+    data, length, this->now_playing_data, this->now_playing_length, uxQueueMessagesWaiting(this->buffer_queue_.handle));
   now_playing_data = data;
   now_playing_length = length;
-  if (this->state_ != speaker::STATE_RUNNING && this->state_ != speaker::STATE_STARTING) {
-    this->start();
-  }
   return this->keep_playing_();
 }
 
 size_t ESPADFSpeaker::keep_playing_() {
   if (!this->now_playing_length) {
+    return 0;
+  }
+  if (this->state_ == speaker::STATE_STOPPED) {
+    this->start();
+  }
+  if (!this->is_player_task_active) {
     return 0;
   }
   size_t sent_length = 0;

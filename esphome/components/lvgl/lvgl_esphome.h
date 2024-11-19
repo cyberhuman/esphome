@@ -174,6 +174,7 @@ class LvglComponent : public PollingComponent {
  protected:
   void write_random_();
   void draw_buffer_(const lv_area_t *area, lv_color_t *ptr);
+  void flush_all_();
   void flush_cb_(lv_disp_drv_t *disp_drv, const lv_area_t *area, lv_color_t *color_p);
 
   std::vector<display::Display *> displays_{};

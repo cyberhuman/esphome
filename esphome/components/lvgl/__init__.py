@@ -362,6 +362,8 @@ async def to_code(configs):
         add_define("LV_COLOR_SCREEN_TRANSP", "1")
     for use in helpers.lv_uses:
         add_define(f"LV_USE_{use.upper()}")
+    add_define("LV_THEME_DEFAULT_GROW", "0")
+    add_define("LV_THEME_DEFAULT_TRANSITION_TIME", "0")
     lv_conf_h_file = CORE.relative_src_path(LV_CONF_FILENAME)
     write_file_if_changed(lv_conf_h_file, generate_lv_conf_h())
     cg.add_build_flag("-DLV_CONF_H=1")

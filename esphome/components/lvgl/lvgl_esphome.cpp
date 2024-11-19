@@ -194,6 +194,11 @@ void LvglComponent::draw_buffer_(const lv_area_t *area, lv_color_t *ptr) {
                             LV_COLOR_16_SWAP);
   }
 }
+void LvglComponent::flush_all_() {
+  for (auto *display : this->displays_) {
+    display->update();
+  }
+}
 
 void LvglComponent::flush_cb_(lv_disp_drv_t *disp_drv, const lv_area_t *area, lv_color_t *color_p) {
   if (!this->paused_) {
@@ -201,6 +206,9 @@ void LvglComponent::flush_cb_(lv_disp_drv_t *disp_drv, const lv_area_t *area, lv
     this->draw_buffer_(area, color_p);
     ESP_LOGVV(TAG, "flush_cb, area=%d/%d, %d/%d took %dms", area->x1, area->y1, lv_area_get_width(area),
               lv_area_get_height(area), (int) (millis() - now));
+  }
+  if (lv_disp_flush_is_last(disp_drv)) {
+    flush_all_();
   }
   lv_disp_flush_ready(disp_drv);
 }

@@ -1,25 +1,22 @@
 #pragma once
 
-// This component was developed using knowledge gathered by a number
-// of people who reverse-engineered the Shelly 3EM:
-//
-// @AndreKR on GitHub
-// Axel (@Axel830 on GitHub)
-// Marko (@goodkiller on GitHub)
-// Michaël Piron (@michaelpiron on GitHub)
-// Theo Arends (@arendst on GitHub)
-
 #include "esphome/core/component.h"
 #include "esphome/core/hal.h"
-#include "esphome/components/i2c/i2c.h"
+#include "esphome/components/spi/spi.h"
 #include "esphome/components/sensor/sensor.h"
 #include "esphome/components/ade7880_base/ade7880_base.h"
 
-namespace esphome {
-namespace ade7880_i2c {
+#include <vector>
 
-class ADE7880I2C : public ade7880_base::ADE7880, public i2c::I2CDevice {
+namespace esphome {
+namespace ade7880_spi {
+
+class ADE7880SPI : public ade7880_base::ADE7880,
+                   public spi::SPIDevice<spi::BIT_ORDER_MSB_FIRST, spi::CLOCK_POLARITY_HIGH, spi::CLOCK_PHASE_LEADING,
+                                         spi::DATA_RATE_1MHZ> {
  public:
+  void setup() override;
+
   void dump_config() override;
 
  protected:
@@ -38,5 +35,5 @@ class ADE7880I2C : public ade7880_base::ADE7880, public i2c::I2CDevice {
   void write_u32_register16(uint16_t a_register, uint32_t value) override;
 };
 
-}  // namespace ade7880_i2c
+}  // namespace ade7880_spi
 }  // namespace esphome

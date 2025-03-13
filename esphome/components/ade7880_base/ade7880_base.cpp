@@ -113,7 +113,7 @@ void ADE7880::update() {
   if (this->channel_a_ != nullptr) {
     auto *chan = this->channel_a_;
     this->update_sensor_from_s24zp_register16_(chan->current, AIRMS, [](float val) { return val / 100000.0f; });
-    this->update_sensor_from_s24zp_register16_(chan->voltage, BVRMS, [](float val) { return val / 10000.0f; });
+    this->update_sensor_from_s24zp_register16_(chan->voltage, AVRMS, [](float val) { return val / 10000.0f; });
     this->update_sensor_from_s24zp_register16_(chan->active_power, AWATT, [](float val) { return val / 100.0f; });
     this->update_sensor_from_s24zp_register16_(chan->apparent_power, AVA, [](float val) { return val / 100.0f; });
     this->update_sensor_from_s16_register16_(chan->power_factor, APF,
@@ -121,7 +121,7 @@ void ADE7880::update() {
     this->update_sensor_from_s32_register16_(chan->forward_active_energy, AFWATTHR, [&chan](float val) {
       return chan->forward_active_energy_total += val / 14400.0f;
     });
-    this->update_sensor_from_s32_register16_(chan->reverse_active_energy, AFWATTHR, [&chan](float val) {
+    this->update_sensor_from_s32_register16_(chan->reverse_active_energy, AFVARHR, [&chan](float val) {
       return chan->reverse_active_energy_total += val / 14400.0f;
     });
   }
@@ -137,7 +137,7 @@ void ADE7880::update() {
     this->update_sensor_from_s32_register16_(chan->forward_active_energy, BFWATTHR, [&chan](float val) {
       return chan->forward_active_energy_total += val / 14400.0f;
     });
-    this->update_sensor_from_s32_register16_(chan->reverse_active_energy, BFWATTHR, [&chan](float val) {
+    this->update_sensor_from_s32_register16_(chan->reverse_active_energy, BFVARHR, [&chan](float val) {
       return chan->reverse_active_energy_total += val / 14400.0f;
     });
   }
@@ -153,7 +153,7 @@ void ADE7880::update() {
     this->update_sensor_from_s32_register16_(chan->forward_active_energy, CFWATTHR, [&chan](float val) {
       return chan->forward_active_energy_total += val / 14400.0f;
     });
-    this->update_sensor_from_s32_register16_(chan->reverse_active_energy, CFWATTHR, [&chan](float val) {
+    this->update_sensor_from_s32_register16_(chan->reverse_active_energy, CFVARHR, [&chan](float val) {
       return chan->reverse_active_energy_total += val / 14400.0f;
     });
   }

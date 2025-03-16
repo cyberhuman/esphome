@@ -127,15 +127,12 @@ class ADE78xx : public PollingComponent {
 
   virtual void software_reset_device() = 0;
 
-  // each of these functions allow the caller to pass in a lambda (or any other callable)
+  // the caller should pass in one of the read_xx_register functions and a lambda (or any other callable)
   // which modifies the value read from the register before it is passed to the sensor
   // the callable will be passed a 'float' value and is expected to return a 'float'
-  template<typename F>
-  void update_sensor_from_s24zp_register16_(sensor::Sensor *sensor, const optional<uint16_t> &a_register, F &&f);
-  template<typename F>
-  void update_sensor_from_s16_register16_(sensor::Sensor *sensor, const optional<uint16_t> &a_register, F &&f);
-  template<typename F>
-  void update_sensor_from_s32_register16_(sensor::Sensor *sensor, const optional<uint16_t> &a_register, F &&f);
+  template<typename T, typename F>
+  void update_sensor_from_register_(sensor::Sensor *sensor, T (ADE78xx::*read_register)(uint16_t),
+                                    const optional<uint16_t> &a_register, F &&f);
 
   void reset_device_();
 

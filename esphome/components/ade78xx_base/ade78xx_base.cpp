@@ -59,34 +59,14 @@ void ADE78xx::loop() {
   this->store_.reset_pending = false;
 }
 
-template<typename F>
-void ADE78xx::update_sensor_from_s24zp_register16_(sensor::Sensor *sensor, const optional<uint16_t> &a_register,
-                                                   F &&f) {
+template<typename T, typename F>
+void ADE78xx::update_sensor_from_register_(sensor::Sensor *sensor, T (ADE78xx::*read_register)(uint16_t),
+                                           const optional<uint16_t> &a_register, F &&f) {
   if (!a_register || sensor == nullptr) {
     return;
   }
 
-  float val = this->read_s24zp_register16_(*a_register);
-  sensor->publish_state(f(val));
-}
-
-template<typename F>
-void ADE78xx::update_sensor_from_s16_register16_(sensor::Sensor *sensor, const optional<uint16_t> &a_register, F &&f) {
-  if (!a_register || sensor == nullptr) {
-    return;
-  }
-
-  float val = this->read_s16_register16(*a_register);
-  sensor->publish_state(f(val));
-}
-
-template<typename F>
-void ADE78xx::update_sensor_from_s32_register16_(sensor::Sensor *sensor, const optional<uint16_t> &a_register, F &&f) {
-  if (!a_register || sensor == nullptr) {
-    return;
-  }
-
-  float val = this->read_s32_register16(*a_register);
+  float val = (this->*read_register)(*a_register);
   sensor->publish_state(f(val));
 }
 
@@ -98,18 +78,22 @@ void ADE78xx::update() {
   auto start = millis();
 
   for (auto *chan : this->channels_) {
-    this->update_sensor_from_s24zp_register16_(chan->current, chan->irms_, [](float val) { return val / 100000.0f; });
-    this->update_sensor_from_s24zp_register16_(chan->voltage, chan->vrms_, [](float val) { return val / 10000.0f; });
-    this->update_sensor_from_s24zp_register16_(chan->active_power, chan->watt_, [](float val) { return val / 100.0f; });
-    this->update_sensor_from_s24zp_register16_(chan->apparent_power, chan->va_, [](float val) { return val / 100.0f; });
-    this->update_sensor_from_s16_register16_(chan->power_factor, chan->pf_,
-                                             [](float val) { return std::abs(val / -327.68f); });
-    this->update_sensor_from_s32_register16_(chan->forward_active_energy, chan->fwatthr_, [&chan](float val) {
-      return chan->forward_active_energy_total += val / 14400.0f;
-    });
-    this->update_sensor_from_s32_register16_(chan->reverse_active_energy, chan->fvarhr_, [&chan](float val) {
-      return chan->reverse_active_energy_total += val / 14400.0f;
-    });
+    this->update_sensor_from_register_(chan->current, &ADE78xx::read_s24zp_register16_, chan->irms_,
+                                       [](float val) { return val / 100000.0f; });
+    this->update_sensor_from_register_(chan->voltage, &ADE78xx::read_s24zp_register16_, chan->vrms_,
+                                       [](float val) { return val / 10000.0f; });
+    this->update_sensor_from_register_(chan->active_power, &ADE78xx::read_s24zp_register16_, chan->watt_,
+                                       [](float val) { return val / 100.0f; });
+    this->update_sensor_from_register_(chan->apparent_power, &ADE78xx::read_s24zp_register16_, chan->va_,
+                                       [](float val) { return val / 100.0f; });
+    this->update_sensor_from_register_(chan->power_factor, &ADE78xx::read_s16_register16, chan->pf_,
+                                       [](float val) { return std::abs(val / -327.68f); });
+    this->update_sensor_from_register_(
+        chan->forward_active_energy, &ADE78xx::read_s32_register16, chan->fwatthr_,
+        [&chan](float val) { return chan->forward_active_energy_total += val / 14400.0f; });
+    this->update_sensor_from_register_(
+        chan->reverse_active_energy, &ADE78xx::read_s32_register16, chan->fvarhr_,
+        [&chan](float val) { return chan->reverse_active_energy_total += val / 14400.0f; });
   }
 
   ESP_LOGD(TAG, "update took %" PRIu32 " ms", millis() - start);

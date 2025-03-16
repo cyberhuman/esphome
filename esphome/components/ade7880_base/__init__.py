@@ -22,6 +22,7 @@ POWER_CHANNEL_SCHEMA = ade78xx_base.channel_schema(
     include_voltage_gain_calibration=True,
     include_power_gain_calibration=True,
     include_phase_angle_calibration=True,
+    include_frequency=True,
 )
 
 NEUTRAL_CHANNEL_SCHEMA = ade78xx_base.channel_schema(
@@ -54,6 +55,7 @@ channels = {
         pf=ade7880_base_ns.namespace("APF"),
         fwatthr=ade7880_base_ns.namespace("AFWATTHR"),
         fvarhr=ade7880_base_ns.namespace("AFVARHR"),
+        period=ade7880_base_ns.namespace("APERIOD"),
     ),
     CONF_PHASE_B: ade78xx_base.ChannelConfig(
         name="Phase B",
@@ -68,6 +70,7 @@ channels = {
         pf=ade7880_base_ns.namespace("BPF"),
         fwatthr=ade7880_base_ns.namespace("BFWATTHR"),
         fvarhr=ade7880_base_ns.namespace("BFVARHR"),
+        period=ade7880_base_ns.namespace("BPERIOD"),
     ),
     CONF_PHASE_C: ade78xx_base.ChannelConfig(
         name="Phase C",
@@ -82,6 +85,7 @@ channels = {
         pf=ade7880_base_ns.namespace("CPF"),
         fwatthr=ade7880_base_ns.namespace("CFWATTHR"),
         fvarhr=ade7880_base_ns.namespace("CFVARHR"),
+        period=ade7880_base_ns.namespace("CPERIOD"),
     ),
     ade78xx_base.CONF_NEUTRAL: ade78xx_base.ChannelConfig(
         name="Neutral",

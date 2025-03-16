@@ -20,13 +20,14 @@ namespace esphome {
 namespace ade78xx_base {
 
 struct Channel {
-  void set_current(sensor::Sensor *sens) { this->current = sens; }
-  void set_voltage(sensor::Sensor *sens) { this->voltage = sens; }
-  void set_active_power(sensor::Sensor *sens) { this->active_power = sens; }
-  void set_apparent_power(sensor::Sensor *sens) { this->apparent_power = sens; }
-  void set_power_factor(sensor::Sensor *sens) { this->power_factor = sens; }
-  void set_forward_active_energy(sensor::Sensor *sens) { this->forward_active_energy = sens; }
-  void set_reverse_active_energy(sensor::Sensor *sens) { this->reverse_active_energy = sens; }
+  void set_current_sensor(sensor::Sensor *sens) { this->current_sensor = sens; }
+  void set_voltage_sensor(sensor::Sensor *sens) { this->voltage_sensor = sens; }
+  void set_active_power_sensor(sensor::Sensor *sens) { this->active_power_sensor = sens; }
+  void set_apparent_power_sensor(sensor::Sensor *sens) { this->apparent_power_sensor = sens; }
+  void set_power_factor_sensor(sensor::Sensor *sens) { this->power_factor_sensor = sens; }
+  void set_forward_active_energy_sensor(sensor::Sensor *sens) { this->forward_active_energy_sensor = sens; }
+  void set_reverse_active_energy_sensor(sensor::Sensor *sens) { this->reverse_active_energy_sensor = sens; }
+  void set_frequency_sensor(sensor::Sensor *sens) { this->frequency_sensor = sens; }
 
   void set_current_gain_calibration(int32_t val) { this->current_gain_calibration = val; }
   void set_voltage_gain_calibration(int32_t val) { this->voltage_gain_calibration = val; }
@@ -46,14 +47,16 @@ struct Channel {
   void set_pf(uint16_t val) { this->pf_ = val; }
   void set_fwatthr(uint16_t val) { this->fwatthr_ = val; }
   void set_fvarhr(uint16_t val) { this->fvarhr_ = val; }
+  void set_period(uint16_t val) { this->period_ = val; }
 
-  sensor::Sensor *current{nullptr};
-  sensor::Sensor *voltage{nullptr};
-  sensor::Sensor *active_power{nullptr};
-  sensor::Sensor *apparent_power{nullptr};
-  sensor::Sensor *power_factor{nullptr};
-  sensor::Sensor *forward_active_energy{nullptr};
-  sensor::Sensor *reverse_active_energy{nullptr};
+  sensor::Sensor *current_sensor{nullptr};
+  sensor::Sensor *voltage_sensor{nullptr};
+  sensor::Sensor *active_power_sensor{nullptr};
+  sensor::Sensor *apparent_power_sensor{nullptr};
+  sensor::Sensor *power_factor_sensor{nullptr};
+  sensor::Sensor *forward_active_energy_sensor{nullptr};
+  sensor::Sensor *reverse_active_energy_sensor{nullptr};
+  sensor::Sensor *frequency_sensor{nullptr};
   optional<int32_t> current_gain_calibration{};
   optional<int32_t> voltage_gain_calibration{};
   optional<int32_t> power_gain_calibration{};
@@ -74,6 +77,7 @@ struct Channel {
   optional<uint16_t> pf_{};
   optional<uint16_t> fwatthr_{};
   optional<uint16_t> fvarhr_{};
+  optional<uint16_t> period_{};
 
   explicit Channel(std::string name) : name_(std::move(name)) {}
 };

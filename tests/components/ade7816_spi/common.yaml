@@ -68,5 +68,6 @@ sensor:
     voltage:
       name: Voltage
       voltage: Voltage
+      frequency: Frequency
       calibration:
         voltage_gain: 3189

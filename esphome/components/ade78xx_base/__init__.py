@@ -23,12 +23,14 @@ from esphome.const import (
     DEVICE_CLASS_APPARENT_POWER,
     DEVICE_CLASS_CURRENT,
     DEVICE_CLASS_ENERGY,
+    DEVICE_CLASS_FREQUENCY,
     DEVICE_CLASS_POWER,
     DEVICE_CLASS_POWER_FACTOR,
     DEVICE_CLASS_VOLTAGE,
     STATE_CLASS_MEASUREMENT,
     STATE_CLASS_TOTAL_INCREASING,
     UNIT_AMPERE,
+    UNIT_HERTZ,
     UNIT_PERCENT,
     UNIT_VOLT,
     UNIT_VOLT_AMPS,
@@ -68,6 +70,7 @@ class ChannelConfig:
     pf: Optional[cg.MockObj] = None
     fwatthr: Optional[cg.MockObj] = None
     fvarhr: Optional[cg.MockObj] = None
+    period: Optional[cg.MockObj] = None
 
 
 def channel_schema(
@@ -78,6 +81,7 @@ def channel_schema(
     include_power_factor=False,
     include_forward_active_energy=False,
     include_reverse_active_energy=False,
+    include_frequency=False,
     include_current_gain_calibration=False,
     include_voltage_gain_calibration=False,
     include_power_gain_calibration=False,
@@ -153,6 +157,14 @@ def channel_schema(
         )
         if include_reverse_active_energy
         else None,
+        CONF_FREQUENCY: sensor.sensor_schema(
+            unit_of_measurement=UNIT_HERTZ,
+            accuracy_decimals=2,
+            device_class=DEVICE_CLASS_FREQUENCY,
+            state_class=STATE_CLASS_MEASUREMENT,
+        )
+        if include_frequency
+        else None,
     }
 
     return cv.Schema(
@@ -213,6 +225,8 @@ async def make_channel(config, channel_config):
         cg.add(var.set_fwatthr(channel_config.fwatthr))
     if channel_config.fvarhr:
         cg.add(var.set_fvarhr(channel_config.fvarhr))
+    if channel_config.period:
+        cg.add(var.set_period(channel_config.period))
 
     channel_name = config.get(CONF_NAME)
     for sensor_type in [
@@ -223,6 +237,7 @@ async def make_channel(config, channel_config):
         CONF_POWER_FACTOR,
         CONF_FORWARD_ACTIVE_ENERGY,
         CONF_REVERSE_ACTIVE_ENERGY,
+        CONF_FREQUENCY,
     ]:
         if conf := config.get(sensor_type):
             sensor_name = conf.get(CONF_NAME)
@@ -234,7 +249,7 @@ async def make_channel(config, channel_config):
                 conf[CONF_NAME] = f"{channel_name} {sensor_name}"
 
             sens = await sensor.new_sensor(conf)
-            cg.add(getattr(var, f"set_{sensor_type}")(sens))
+            cg.add(getattr(var, f"set_{sensor_type}_sensor")(sens))
 
     for calib_type in [
         CONF_CURRENT_GAIN,

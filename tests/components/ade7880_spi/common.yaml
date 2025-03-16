@@ -19,6 +19,7 @@ sensor:
       power_factor: Channel A Power Factor
       forward_active_energy: Channel A Forward Active Energy
       reverse_active_energy: Channel A Reverse Active Energy
+      frequency: Frequency
       calibration:
         current_gain: 3116628
         voltage_gain: -757178
@@ -32,6 +33,7 @@ sensor:
       power_factor: Channel B Power Factor
       forward_active_energy: Channel B Forward Active Energy
       reverse_active_energy: Channel B Reverse Active Energy
+      frequency: Frequency
       calibration:
         current_gain: 3133655
         voltage_gain: -755235
@@ -45,6 +47,7 @@ sensor:
       power_factor: Channel C Power Factor
       forward_active_energy: Channel C Forward Active Energy
       reverse_active_energy: Channel C Reverse Active Energy
+      frequency: Frequency
       calibration:
         current_gain: 3111158
         voltage_gain: -743813

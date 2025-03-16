@@ -29,6 +29,7 @@ CURRENT_CHANNEL_SCHEMA = ade78xx_base.channel_schema(
 VOLTAGE_CHANNEL_SCHEMA = ade78xx_base.channel_schema(
     include_voltage=True,
     include_voltage_gain_calibration=True,
+    include_frequency=True,
 )
 
 ADE7816_CONFIG_SCHEMA = ade78xx_base.ADE78XX_CONFIG_SCHEMA.extend(
@@ -104,6 +105,7 @@ channels = {
         name="Voltage",
         vgain=ade7816_base_ns.namespace("VGAIN"),
         vrms=ade7816_base_ns.namespace("VRMS"),
+        period=ade7816_base_ns.namespace("PERIOD"),
     ),
 }
 

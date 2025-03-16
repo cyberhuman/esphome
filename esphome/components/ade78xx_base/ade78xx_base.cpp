@@ -78,22 +78,24 @@ void ADE78xx::update() {
   auto start = millis();
 
   for (auto *chan : this->channels_) {
-    this->update_sensor_from_register_(chan->current, &ADE78xx::read_s24zp_register16_, chan->irms_,
+    this->update_sensor_from_register_(chan->current_sensor, &ADE78xx::read_s24zp_register16_, chan->irms_,
                                        [](float val) { return val / 100000.0f; });
-    this->update_sensor_from_register_(chan->voltage, &ADE78xx::read_s24zp_register16_, chan->vrms_,
+    this->update_sensor_from_register_(chan->voltage_sensor, &ADE78xx::read_s24zp_register16_, chan->vrms_,
                                        [](float val) { return val / 10000.0f; });
-    this->update_sensor_from_register_(chan->active_power, &ADE78xx::read_s24zp_register16_, chan->watt_,
+    this->update_sensor_from_register_(chan->active_power_sensor, &ADE78xx::read_s24zp_register16_, chan->watt_,
                                        [](float val) { return val / 100.0f; });
-    this->update_sensor_from_register_(chan->apparent_power, &ADE78xx::read_s24zp_register16_, chan->va_,
+    this->update_sensor_from_register_(chan->apparent_power_sensor, &ADE78xx::read_s24zp_register16_, chan->va_,
                                        [](float val) { return val / 100.0f; });
-    this->update_sensor_from_register_(chan->power_factor, &ADE78xx::read_s16_register16, chan->pf_,
+    this->update_sensor_from_register_(chan->power_factor_sensor, &ADE78xx::read_s16_register16, chan->pf_,
                                        [](float val) { return std::abs(val / -327.68f); });
     this->update_sensor_from_register_(
-        chan->forward_active_energy, &ADE78xx::read_s32_register16, chan->fwatthr_,
+        chan->forward_active_energy_sensor, &ADE78xx::read_s32_register16, chan->fwatthr_,
         [&chan](float val) { return chan->forward_active_energy_total += val / 14400.0f; });
     this->update_sensor_from_register_(
-        chan->reverse_active_energy, &ADE78xx::read_s32_register16, chan->fvarhr_,
+        chan->reverse_active_energy_sensor, &ADE78xx::read_s32_register16, chan->fvarhr_,
         [&chan](float val) { return chan->reverse_active_energy_total += val / 14400.0f; });
+    this->update_sensor_from_register_(chan->frequency_sensor, &ADE78xx::read_u16_register16, chan->period_,
+                                       [](float val) { return 256000.0f / val; });
   }
 
   ESP_LOGD(TAG, "update took %" PRIu32 " ms", millis() - start);
@@ -107,13 +109,14 @@ void ADE78xx::dump_config() {
 
   for (auto *chan : this->channels_) {
     ESP_LOGCONFIG(TAG, "  %s:", chan->name_.c_str());
-    LOG_SENSOR("    ", "Current", chan->current);
-    LOG_SENSOR("    ", "Voltage", chan->voltage);
-    LOG_SENSOR("    ", "Active Power", chan->active_power);
-    LOG_SENSOR("    ", "Apparent Power", chan->apparent_power);
-    LOG_SENSOR("    ", "Power Factor", chan->power_factor);
-    LOG_SENSOR("    ", "Forward Active Energy", chan->forward_active_energy);
-    LOG_SENSOR("    ", "Reverse Active Energy", chan->reverse_active_energy);
+    LOG_SENSOR("    ", "Current", chan->current_sensor);
+    LOG_SENSOR("    ", "Voltage", chan->voltage_sensor);
+    LOG_SENSOR("    ", "Active Power", chan->active_power_sensor);
+    LOG_SENSOR("    ", "Apparent Power", chan->apparent_power_sensor);
+    LOG_SENSOR("    ", "Power Factor", chan->power_factor_sensor);
+    LOG_SENSOR("    ", "Forward Active Energy", chan->forward_active_energy_sensor);
+    LOG_SENSOR("    ", "Reverse Active Energy", chan->reverse_active_energy_sensor);
+    LOG_SENSOR("    ", "Frequency", chan->frequency_sensor);
     ESP_LOGCONFIG(TAG, "    Calibration:");
     if (chan->current_gain_calibration)
       ESP_LOGCONFIG(TAG, "     Current: %" PRId32, *chan->current_gain_calibration);

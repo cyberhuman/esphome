@@ -30,6 +30,13 @@ void ADE7816::init_device_registers() {
   this->write_u32_register16(WTHR0, 0x000000);
   this->write_u32_register16(VARTHR1, 0x000002);
   this->write_u32_register16(VARTHR0, 0x000000);
+  this->write_s24zpse_register16_(VRMSOS, -4394);
+  this->write_s24zpse_register16_(IARMSOS, -9625);
+  this->write_s24zpse_register16_(IBRMSOS, -9625);
+  this->write_s24zpse_register16_(ICRMSOS, -9625);
+  this->write_s24zpse_register16_(IDRMSOS, -9625);
+  this->write_s24zpse_register16_(IERMSOS, -9625);
+  this->write_s24zpse_register16_(IFRMSOS, -9625);
   this->write_u16_register16(GAIN, 0);
 }
 

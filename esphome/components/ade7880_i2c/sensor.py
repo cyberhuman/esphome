@@ -1,19 +1,20 @@
 import esphome.codegen as cg
+from esphome.components import ade78xx_base, ade7880_base, i2c
 import esphome.config_validation as cv
-from esphome.components import i2c, ade7880_base
 from esphome.const import CONF_ID
-
 
 DEPENDENCIES = ["i2c"]
 AUTO_LOAD = ["ade7880_base"]
 
 ade7880_ns = cg.esphome_ns.namespace("ade7880_i2c")
-ADE7880 = ade7880_ns.class_("ADE7880I2C", ade7880_base.ADE7880, i2c.I2CDevice)
+ADE7880I2C = ade7880_ns.class_(
+    "ADE7880I2C", ade78xx_base.ADE78XXI2C, ade7880_base.ADE7880, i2c.I2CDevice
+)
 
 CONFIG_SCHEMA = (
     cv.Schema(
         {
-            cv.GenerateID(): cv.declare_id(ADE7880),
+            cv.GenerateID(): cv.declare_id(ADE7880I2C),
         }
     )
     .extend(ade7880_base.ADE7880_CONFIG_SCHEMA)

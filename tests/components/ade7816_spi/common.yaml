@@ -1,0 +1,72 @@
+spi:
+  - id: spi_ade7816
+    clk_pin: ${clk_pin}
+    mosi_pin: ${mosi_pin}
+    miso_pin: ${miso_pin}
+
+sensor:
+  - platform: ade7816_spi
+    cs_pin: ${cs_pin}
+    irq0_pin: ${irq0_pin}
+    irq1_pin: ${irq1_pin}
+    reset_pin: ${reset_pin}
+    frequency: 60Hz
+    current_a:
+      name: Channel A
+      current: Current
+      forward_active_energy: Forward Active Energy
+      reverse_active_energy: Reverse Active Energy
+      calibration:
+        current_gain: 3116628
+        power_gain: 0
+        phase_angle: 4197540
+    current_b:
+      name: Channel B
+      current: Current
+      forward_active_energy: Forward Active Energy
+      reverse_active_energy: Reverse Active Energy
+      calibration:
+        current_gain: 3133655
+        power_gain: 0
+        phase_angle: 4197540
+    current_c:
+      name: Channel C
+      current: Current
+      forward_active_energy: Forward Active Energy
+      reverse_active_energy: Reverse Active Energy
+      calibration:
+        current_gain: 3111158
+        power_gain: 0
+        phase_angle: 4197540
+    current_d:
+      name: Channel D
+      current: Current
+      forward_active_energy: Forward Active Energy
+      reverse_active_energy: Reverse Active Energy
+      calibration:
+        current_gain: 3116628
+        power_gain: 0
+        phase_angle: 4197540
+    current_e:
+      name: Channel E
+      current: Current
+      forward_active_energy: Forward Active Energy
+      reverse_active_energy: Reverse Active Energy
+      calibration:
+        current_gain: 3133655
+        power_gain: 0
+        phase_angle: 4197540
+    current_f:
+      name: Channel F
+      current: Current
+      forward_active_energy: Forward Active Energy
+      reverse_active_energy: Reverse Active Energy
+      calibration:
+        current_gain: 3111158
+        power_gain: 0
+        phase_angle: 4197540
+    voltage:
+      name: Voltage
+      voltage: Voltage
+      calibration:
+        voltage_gain: 3189

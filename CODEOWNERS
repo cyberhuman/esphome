@@ -18,6 +18,9 @@ esphome/components/ac_dimmer/* @glmnet
 esphome/components/adc/* @esphome/core
 esphome/components/adc128s102/* @DeerMaximum
 esphome/components/addressable_light/* @justfalter
+esphome/components/ade7816_base/* @cyberhuman
+esphome/components/ade7816_i2c/* @cyberhuman
+esphome/components/ade7816_spi/* @cyberhuman
 esphome/components/ade7880/* @kpfleming
 esphome/components/ade7880_base/* @cyberhuman @kpfleming
 esphome/components/ade7880_i2c/* @kpfleming

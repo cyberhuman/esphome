@@ -169,7 +169,8 @@ void ADE78xx::init_device_() {
     this->calibrate_s24zpse_reading_(chan->igain_, chan->current_gain_calibration);
     this->calibrate_s24zpse_reading_(chan->vgain_, chan->voltage_gain_calibration);
     this->calibrate_s24zpse_reading_(chan->pgain_, chan->power_gain_calibration);
-    this->calibrate_s10zp_reading_(chan->phcal_, chan->phase_angle_calibration);
+    this->calibrate_s24zpse_reading_(chan->phcal_24bit_, chan->phase_angle_calibration);
+    this->calibrate_s10zp_reading_(chan->phcal_10bit_, chan->phase_angle_calibration);
   }
 
   this->flush_write_queue();

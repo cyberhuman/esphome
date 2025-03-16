@@ -59,7 +59,8 @@ class ChannelConfig:
     igain: Optional[cg.MockObj] = None
     vgain: Optional[cg.MockObj] = None
     pgain: Optional[cg.MockObj] = None
-    phcal: Optional[cg.MockObj] = None
+    phcal_10bit: Optional[cg.MockObj] = None
+    phcal_24bit: Optional[cg.MockObj] = None
     irms: Optional[cg.MockObj] = None
     vrms: Optional[cg.MockObj] = None
     watt: Optional[cg.MockObj] = None
@@ -194,8 +195,10 @@ async def make_channel(config, channel_config):
         cg.add(var.set_vgain(channel_config.vgain))
     if channel_config.pgain:
         cg.add(var.set_pgain(channel_config.pgain))
-    if channel_config.phcal:
-        cg.add(var.set_phcal(channel_config.phcal))
+    if channel_config.phcal_10bit:
+        cg.add(var.set_phcal_10bit(channel_config.phcal_10bit))
+    if channel_config.phcal_24bit:
+        cg.add(var.set_phcal_24bit(channel_config.phcal_24bit))
     if channel_config.irms:
         cg.add(var.set_irms(channel_config.irms))
     if channel_config.vrms:

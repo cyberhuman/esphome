@@ -37,7 +37,8 @@ struct Channel {
   void set_igain(uint16_t val) { this->igain_ = val; }
   void set_vgain(uint16_t val) { this->vgain_ = val; }
   void set_pgain(uint16_t val) { this->pgain_ = val; }
-  void set_phcal(uint16_t val) { this->phcal_ = val; }
+  void set_phcal_10bit(uint16_t val) { this->phcal_10bit_ = val; }
+  void set_phcal_24bit(uint16_t val) { this->phcal_24bit_ = val; }
   void set_irms(uint16_t val) { this->irms_ = val; }
   void set_vrms(uint16_t val) { this->vrms_ = val; }
   void set_watt(uint16_t val) { this->watt_ = val; }
@@ -64,7 +65,8 @@ struct Channel {
   optional<uint16_t> igain_{};
   optional<uint16_t> vgain_{};
   optional<uint16_t> pgain_{};
-  optional<uint16_t> phcal_{};
+  optional<uint16_t> phcal_10bit_{};
+  optional<uint16_t> phcal_24bit_{};
   optional<uint16_t> irms_{};
   optional<uint16_t> vrms_{};
   optional<uint16_t> watt_{};

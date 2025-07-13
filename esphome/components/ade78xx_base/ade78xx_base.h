@@ -1,0 +1,160 @@
+#pragma once
+
+// This component was developed using knowledge gathered by a number
+// of people who reverse-engineered the Shelly 3EM:
+//
+// @AndreKR on GitHub
+// Axel (@Axel830 on GitHub)
+// Marko (@goodkiller on GitHub)
+// Michaël Piron (@michaelpiron on GitHub)
+// Theo Arends (@arendst on GitHub)
+
+#include "esphome/core/component.h"
+#include "esphome/core/hal.h"
+#include "esphome/core/optional.h"
+#include "esphome/components/sensor/sensor.h"
+
+#include <vector>
+
+namespace esphome {
+namespace ade78xx_base {
+
+struct Channel {
+  void set_current_sensor(sensor::Sensor *sens) { this->current_sensor = sens; }
+  void set_voltage_sensor(sensor::Sensor *sens) { this->voltage_sensor = sens; }
+  void set_active_power_sensor(sensor::Sensor *sens) { this->active_power_sensor = sens; }
+  void set_apparent_power_sensor(sensor::Sensor *sens) { this->apparent_power_sensor = sens; }
+  void set_power_factor_sensor(sensor::Sensor *sens) { this->power_factor_sensor = sens; }
+  void set_forward_active_energy_sensor(sensor::Sensor *sens) { this->forward_active_energy_sensor = sens; }
+  void set_reverse_active_energy_sensor(sensor::Sensor *sens) { this->reverse_active_energy_sensor = sens; }
+  void set_frequency_sensor(sensor::Sensor *sens) { this->frequency_sensor = sens; }
+
+  void set_current_gain_calibration(int32_t val) { this->current_gain_calibration = val; }
+  void set_voltage_gain_calibration(int32_t val) { this->voltage_gain_calibration = val; }
+  void set_power_gain_calibration(int32_t val) { this->power_gain_calibration = val; }
+  void set_phase_angle_calibration(int32_t val) { this->phase_angle_calibration = val; }
+
+  // Register address setters
+  void set_igain(uint16_t val) { this->igain_ = val; }
+  void set_vgain(uint16_t val) { this->vgain_ = val; }
+  void set_pgain(uint16_t val) { this->pgain_ = val; }
+  void set_phcal_10bit(uint16_t val) { this->phcal_10bit_ = val; }
+  void set_phcal_24bit(uint16_t val) { this->phcal_24bit_ = val; }
+  void set_irms(uint16_t val) { this->irms_ = val; }
+  void set_vrms(uint16_t val) { this->vrms_ = val; }
+  void set_watt(uint16_t val) { this->watt_ = val; }
+  void set_va(uint16_t val) { this->va_ = val; }
+  void set_pf(uint16_t val) { this->pf_ = val; }
+  void set_fwatthr(uint16_t val) { this->fwatthr_ = val; }
+  void set_fvarhr(uint16_t val) { this->fvarhr_ = val; }
+  void set_period(uint16_t val) { this->period_ = val; }
+
+  sensor::Sensor *current_sensor{nullptr};
+  sensor::Sensor *voltage_sensor{nullptr};
+  sensor::Sensor *active_power_sensor{nullptr};
+  sensor::Sensor *apparent_power_sensor{nullptr};
+  sensor::Sensor *power_factor_sensor{nullptr};
+  sensor::Sensor *forward_active_energy_sensor{nullptr};
+  sensor::Sensor *reverse_active_energy_sensor{nullptr};
+  sensor::Sensor *frequency_sensor{nullptr};
+  optional<int32_t> current_gain_calibration{};
+  optional<int32_t> voltage_gain_calibration{};
+  optional<int32_t> power_gain_calibration{};
+  optional<uint16_t> phase_angle_calibration{};
+  float forward_active_energy_total{0};
+  float reverse_active_energy_total{0};
+
+  std::string name_;
+  optional<uint16_t> igain_{};
+  optional<uint16_t> vgain_{};
+  optional<uint16_t> pgain_{};
+  optional<uint16_t> phcal_10bit_{};
+  optional<uint16_t> phcal_24bit_{};
+  optional<uint16_t> irms_{};
+  optional<uint16_t> vrms_{};
+  optional<uint16_t> watt_{};
+  optional<uint16_t> va_{};
+  optional<uint16_t> pf_{};
+  optional<uint16_t> fwatthr_{};
+  optional<uint16_t> fvarhr_{};
+  optional<uint16_t> period_{};
+
+  explicit Channel(std::string name) : name_(std::move(name)) {}
+};
+
+// Store data in a class that doesn't use multiple-inheritance (no vtables in flash!)
+struct ADE78xxStore {
+  volatile bool reset_done{false};
+  bool reset_pending{false};
+  ISRInternalGPIOPin irq1_pin;
+
+  static void gpio_intr(ADE78xxStore *arg);
+};
+
+class ADE78xx : public PollingComponent {
+ public:
+  void set_irq0_pin(InternalGPIOPin *pin) { this->irq0_pin_ = pin; }
+  void set_irq1_pin(InternalGPIOPin *pin) { this->irq1_pin_ = pin; }
+  void set_reset_pin(InternalGPIOPin *pin) { this->reset_pin_ = pin; }
+  void set_frequency(float frequency) { this->frequency_ = frequency; }
+  void set_channels(std::vector<Channel *> &&channels) { this->channels_ = std::move(channels); }
+
+  void setup() override;
+
+  void loop() override;
+
+  void update() override;
+
+  void dump_config() override;
+
+  float get_setup_priority() const override { return setup_priority::DATA; }
+
+ protected:
+  ADE78xxStore store_{};
+  InternalGPIOPin *irq0_pin_{nullptr};
+  InternalGPIOPin *irq1_pin_{nullptr};
+  InternalGPIOPin *reset_pin_{nullptr};
+  float frequency_;
+  std::vector<Channel *> channels_;
+
+  void calibrate_s10zp_reading_(const optional<uint16_t> &a_register, const optional<int16_t> &calibration);
+  void calibrate_s24zpse_reading_(const optional<uint16_t> &a_register, const optional<int32_t> &calibration);
+
+  void init_device_();
+  virtual bool check_reset_status_good() = 0;
+  virtual void clear_status_registers() = 0;
+  virtual void init_device_registers() = 0;
+  virtual void lock_communication_mode() = 0;
+  virtual void flush_write_queue() = 0;
+  virtual void enable_write_protection() = 0;
+  virtual void enable_dsp() = 0;
+
+  virtual void software_reset_device() = 0;
+
+  // the caller should pass in one of the read_xx_register functions and a lambda (or any other callable)
+  // which modifies the value read from the register before it is passed to the sensor
+  // the callable will be passed a 'float' value and is expected to return a 'float'
+  template<typename T, typename F>
+  void update_sensor_from_register_(sensor::Sensor *sensor, T (ADE78xx::*read_register)(uint16_t),
+                                    const optional<uint16_t> &a_register, F &&f);
+
+  void reset_device_();
+
+  virtual uint8_t read_u8_register16(uint16_t a_register) = 0;
+  virtual int16_t read_s16_register16(uint16_t a_register) = 0;
+  virtual uint16_t read_u16_register16(uint16_t a_register) = 0;
+  int32_t read_s24zp_register16_(uint16_t a_register);
+  virtual int32_t read_s32_register16(uint16_t a_register) = 0;
+  virtual uint32_t read_u32_register16(uint16_t a_register) = 0;
+
+  virtual void write_u8_register16(uint16_t a_register, uint8_t value) = 0;
+  void write_s10zp_register16_(uint16_t a_register, int16_t value);
+  virtual void write_s16_register16(uint16_t a_register, int16_t value) = 0;
+  virtual void write_u16_register16(uint16_t a_register, uint16_t value) = 0;
+  void write_s24zpse_register16_(uint16_t a_register, int32_t value);
+  virtual void write_s32_register16(uint16_t a_register, int32_t value) = 0;
+  virtual void write_u32_register16(uint16_t a_register, uint32_t value) = 0;
+};
+
+}  // namespace ade78xx_base
+}  // namespace esphome

@@ -8,13 +8,20 @@ from esphome.components.esp32.const import (
     VARIANT_ESP32,
     VARIANT_ESP32C2,
     VARIANT_ESP32C3,
+    VARIANT_ESP32C5,
     VARIANT_ESP32C6,
     VARIANT_ESP32H2,
+    VARIANT_ESP32P4,
     VARIANT_ESP32S2,
     VARIANT_ESP32S3,
 )
 from esphome.components.libretiny import get_libretiny_component, get_libretiny_family
-from esphome.components.libretiny.const import COMPONENT_BK72XX, COMPONENT_RTL87XX
+from esphome.components.libretiny.const import (
+    COMPONENT_BK72XX,
+    COMPONENT_LN882X,
+    COMPONENT_RTL87XX,
+)
+from esphome.config_helpers import filter_source_files_from_platform
 import esphome.config_validation as cv
 from esphome.const import (
     CONF_ARGS,
@@ -24,6 +31,7 @@ from esphome.const import (
     CONF_HARDWARE_UART,
     CONF_ID,
     CONF_LEVEL,
+    CONF_LOGGER,
     CONF_LOGS,
     CONF_ON_MESSAGE,
     CONF_TAG,
@@ -32,8 +40,10 @@ from esphome.const import (
     PLATFORM_BK72XX,
     PLATFORM_ESP32,
     PLATFORM_ESP8266,
+    PLATFORM_LN882X,
     PLATFORM_RP2040,
     PLATFORM_RTL87XX,
+    PlatformFramework,
 )
 from esphome.core import CORE, Lambda, coroutine_with_priority
 
@@ -79,6 +89,7 @@ DEFAULT = "DEFAULT"
 
 CONF_INITIAL_LEVEL = "initial_level"
 CONF_LOGGER_ID = "logger_id"
+CONF_TASK_LOG_BUFFER_SIZE = "task_log_buffer_size"
 
 UART_SELECTION_ESP32 = {
     VARIANT_ESP32: [UART0, UART1, UART2],
@@ -86,14 +97,17 @@ UART_SELECTION_ESP32 = {
     VARIANT_ESP32S3: [UART0, UART1, USB_CDC, USB_SERIAL_JTAG],
     VARIANT_ESP32C3: [UART0, UART1, USB_CDC, USB_SERIAL_JTAG],
     VARIANT_ESP32C2: [UART0, UART1],
+    VARIANT_ESP32C5: [UART0, UART1, USB_CDC, USB_SERIAL_JTAG],
     VARIANT_ESP32C6: [UART0, UART1, USB_CDC, USB_SERIAL_JTAG],
     VARIANT_ESP32H2: [UART0, UART1, USB_CDC, USB_SERIAL_JTAG],
+    VARIANT_ESP32P4: [UART0, UART1, USB_CDC, USB_SERIAL_JTAG],
 }
 
 UART_SELECTION_ESP8266 = [UART0, UART0_SWAP, UART1]
 
 UART_SELECTION_LIBRETINY = {
     COMPONENT_BK72XX: [DEFAULT, UART1, UART2],
+    COMPONENT_LN882X: [DEFAULT, UART0, UART1, UART2],
     COMPONENT_RTL87XX: [DEFAULT, UART0, UART1, UART2],
 }
 
@@ -178,8 +192,24 @@ CONFIG_SCHEMA = cv.All(
         {
             cv.GenerateID(): cv.declare_id(Logger),
             cv.Optional(CONF_BAUD_RATE, default=115200): cv.positive_int,
-            cv.Optional(CONF_TX_BUFFER_SIZE, default=512): cv.validate_bytes,
+            cv.Optional(CONF_TX_BUFFER_SIZE, default=512): cv.All(
+                cv.validate_bytes, cv.int_range(min=160, max=65535)
+            ),
             cv.Optional(CONF_DEASSERT_RTS_DTR, default=False): cv.boolean,
+            cv.SplitDefault(
+                CONF_TASK_LOG_BUFFER_SIZE,
+                esp32=768,  # Default: 768 bytes (~5-6 messages with 70-byte text plus thread names)
+            ): cv.All(
+                cv.only_on_esp32,
+                cv.validate_bytes,
+                cv.Any(
+                    cv.int_(0),  # Disabled
+                    cv.int_range(
+                        min=640,  # Min: ~4-5 messages with 70-byte text plus thread names
+                        max=32768,  # Max: Depends on message sizes, typically ~300 messages with default size
+                    ),
+                ),
+            ),
             cv.SplitDefault(
                 CONF_HARDWARE_UART,
                 esp8266=UART0,
@@ -189,10 +219,13 @@ CONFIG_SCHEMA = cv.All(
                 esp32_s3_idf=USB_SERIAL_JTAG,
                 esp32_c3_arduino=USB_CDC,
                 esp32_c3_idf=USB_SERIAL_JTAG,
+                esp32_c5_idf=USB_SERIAL_JTAG,
                 esp32_c6_arduino=USB_CDC,
                 esp32_c6_idf=USB_SERIAL_JTAG,
+                esp32_p4_idf=USB_SERIAL_JTAG,
                 rp2040=USB_CDC,
                 bk72xx=DEFAULT,
+                ln882x=DEFAULT,
                 rtl87xx=DEFAULT,
             ): cv.All(
                 cv.only_on(
@@ -201,6 +234,7 @@ CONFIG_SCHEMA = cv.All(
                         PLATFORM_ESP32,
                         PLATFORM_RP2040,
                         PLATFORM_BK72XX,
+                        PLATFORM_LN882X,
                         PLATFORM_RTL87XX,
                     ]
                 ),
@@ -232,12 +266,20 @@ CONFIG_SCHEMA = cv.All(
 async def to_code(config):
     baud_rate = config[CONF_BAUD_RATE]
     level = config[CONF_LEVEL]
+    CORE.data.setdefault(CONF_LOGGER, {})[CONF_LEVEL] = level
     initial_level = LOG_LEVELS[config.get(CONF_INITIAL_LEVEL, level)]
     log = cg.new_Pvariable(
         config[CONF_ID],
         baud_rate,
         config[CONF_TX_BUFFER_SIZE],
     )
+    if CORE.is_esp32:
+        cg.add(log.create_pthread_key())
+        task_log_buffer_size = config[CONF_TASK_LOG_BUFFER_SIZE]
+        if task_log_buffer_size > 0:
+            cg.add_define("USE_ESPHOME_TASK_LOG_BUFFER")
+            cg.add(log.init_log_buffer(task_log_buffer_size))
+
     cg.add(log.set_log_level(initial_level))
     if CONF_HARDWARE_UART in config:
         cg.add(
@@ -294,7 +336,10 @@ async def to_code(config):
     if CORE.using_arduino:
         if config[CONF_HARDWARE_UART] == USB_CDC:
             cg.add_build_flag("-DARDUINO_USB_CDC_ON_BOOT=1")
-            if CORE.is_esp32 and get_esp32_variant() == VARIANT_ESP32C3:
+            if CORE.is_esp32 and get_esp32_variant() in (
+                VARIANT_ESP32C3,
+                VARIANT_ESP32C6,
+            ):
                 cg.add_build_flag("-DARDUINO_USB_MODE=1")
 
     if CORE.using_esp_idf:
@@ -401,3 +446,25 @@ async def logger_set_level_to_code(config, action_id, template_arg, args):
 
     lambda_ = await cg.process_lambda(Lambda(text), args, return_type=cg.void)
     return cg.new_Pvariable(action_id, template_arg, lambda_)
+
+
+FILTER_SOURCE_FILES = filter_source_files_from_platform(
+    {
+        "logger_esp32.cpp": {
+            PlatformFramework.ESP32_ARDUINO,
+            PlatformFramework.ESP32_IDF,
+        },
+        "logger_esp8266.cpp": {PlatformFramework.ESP8266_ARDUINO},
+        "logger_host.cpp": {PlatformFramework.HOST_NATIVE},
+        "logger_rp2040.cpp": {PlatformFramework.RP2040_ARDUINO},
+        "logger_libretiny.cpp": {
+            PlatformFramework.BK72XX_ARDUINO,
+            PlatformFramework.RTL87XX_ARDUINO,
+            PlatformFramework.LN882X_ARDUINO,
+        },
+        "task_log_buffer.cpp": {
+            PlatformFramework.ESP32_ARDUINO,
+            PlatformFramework.ESP32_IDF,
+        },
+    }
+)
